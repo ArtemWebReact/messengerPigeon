@@ -14,7 +14,7 @@ export default function LoginAuth(){
         try{
       
 await signInWithEmailAndPassword(auth, email, password)
-   const uid = auth.currentUser?.uid
+   const uid = auth.currentUser?.email
     if(!uid) return 
 localStorage.setItem("uid", uid)
 routeReg.push('/data/messages')
@@ -28,7 +28,7 @@ console.log(localStorage.getItem("uid"))
  try{
 
     await signInWithPopup(auth, provider)
-       const uid = auth.currentUser?.uid
+       const uid = auth.currentUser?.email
 if(!uid) return 
 localStorage.setItem("uid", uid)
 routeReg.push('/data/messages')

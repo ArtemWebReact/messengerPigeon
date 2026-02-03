@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 export default function RegisterAuth(){
         const routeReg = useRouter()
     const users = collection(db, "users")
-    const uid = auth.currentUser?.uid
+    const uid = auth.currentUser?.email
     const [password, setPassword] = useState('')
     const [email, setEmail] = useState('')
     const [name,setName] = useState('')

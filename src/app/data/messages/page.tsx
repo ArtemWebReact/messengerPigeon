@@ -10,12 +10,11 @@ import ChatContext from "@/app/context";
 import { deleteDoc } from "firebase/firestore";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-
 import '@/app/globals.css'
 import LogoutAuth from "@/app/auth/logout/logout";
 export default function getMessages(){
 
- 
+    
     const contextChat = useContext(ChatContext)
     if(!contextChat) return 
     const {name, setName} = contextChat
@@ -27,15 +26,21 @@ export default function getMessages(){
      const [id, setId] = useState<string>('')
      const [decyptedMessage, setDecryptedMessage] = useState<string>('')
      const [show, setShow] = useState<string>('none')
+     const [uemail, setUEmeil] = useState<string>("")
+     const [uidState , setUidState] = useState<string>("")
     // const uid = auth.currentUser?.uid
 
 
     const pathname = usePathname()
-    const usersCollection = collection(db, 'users')
-     const currentuid = auth.currentUser?.email + name
-     const currentReceiver =  name + auth.currentUser?.email
-            const messageCollection = collection(db, currentuid)
-            const messageReceiver = collection(db, currentReceiver)
+  /* useEffect(()=>{
+    const u = localStorage.getItem('uid')
+    if(!u) return
+     setUEmeil(u)
+
+   },[])*/
+   
+
+  
        // const messageCollectionUser = query(messageCollection, where('email','==', name))
     const [message, setMessage] = useState<object[]>([])
     const [users, setUsers] = useState<object[]>([])
@@ -46,7 +51,8 @@ export default function getMessages(){
     const [allData, setAllData] = useState<object[]>([{}])
     const deleteMessage = async(id:string) =>{
         try{
-            await deleteDoc(doc(db, currentuid, id))
+            const savedUid = localStorage.getItem("uid")
+            await deleteDoc(doc(db, ((auth.currentUser?.email || savedUid) + name), id))
             console.log("Done")
         }
         catch(err){
@@ -55,7 +61,8 @@ export default function getMessages(){
     }
         const deleteMessage2 = async(id:string) =>{
         try{
-            await deleteDoc(doc(db, currentReceiver, id))
+            const savedUid = localStorage.getItem("uid")
+            await deleteDoc(doc(db, (name + (auth.currentUser?.email || savedUid)), id))
             console.log("Done")
         }
         catch(err){
@@ -64,7 +71,8 @@ export default function getMessages(){
     }
     const updateMessage = async(id:string)=>{
         try{
-        await updateDoc(doc(db, currentuid, id),{
+            const savedUid = localStorage.getItem("uid")
+        await updateDoc(doc(db, ((auth.currentUser?.email || savedUid) + name), id),{
         message:newMessage
         })
         }
@@ -74,7 +82,8 @@ export default function getMessages(){
     }
         const updateMessage2 = async(id:string)=>{
         try{
-        await updateDoc(doc(db, currentuid, id),{
+            const savedUid = localStorage.getItem("uid")
+        await updateDoc(doc(db, (name + (auth.currentUser?.email || savedUid)), id),{
         message:newMessage
         })
         }
@@ -84,7 +93,8 @@ export default function getMessages(){
     }
     const addContact = async(contact: object) => {
         try{
-       await addDoc(collection(db, `contacts ${auth.currentUser?.email}`), contact)
+            const savedUid = localStorage.getItem("uid")
+       await addDoc(collection(db, `contacts ${auth.currentUser?.email || savedUid}`), contact)
         }
         catch(err){
             console.error(err)
@@ -92,8 +102,9 @@ export default function getMessages(){
     }
    const deleteContact = async(id:string) =>{
     try{
+        const savedUid = localStorage.getItem("uid")
         if(!auth.currentUser) return
-        const contactCollection = collection(db, `contacts ${auth.currentUser.email}`)
+        const contactCollection = collection(db, `contacts ${auth.currentUser.email|| savedUid}`)
 await deleteDoc(doc(contactCollection, id))
     }
     catch(err){
@@ -113,15 +124,15 @@ await deleteDoc(doc(contactCollection, id))
         crypto.subtle.decrypt(
         {name:"AES-GCM", iv},
         JSON.parse(key),
-        encryptBytes
         )
     )
    )
    }
    const getContact = async() => {
         try{
-        const contacts = await getDocs(collection(db, `contacts ${auth.currentUser?.email}`))
-       
+            const savedUid = localStorage.getItem("uid")
+        const contacts = await getDocs(collection(db, `contacts ${(auth.currentUser?.email || savedUid)}`))
+       // console.log(contacts || "Pidor")
         setTheUser([{
                 email:"notes",
                 name:"notes"
@@ -138,7 +149,25 @@ await deleteDoc(doc(contactCollection, id))
             console.error(err)
         }
     }
-    const intoDatabase = async() =>{
+   
+   // Decription of messages -----------------------------------------------------------
+useEffect(()=>{
+    setName("notes")
+    setNickname("notes")
+}, [])
+useEffect(() => {
+    const savedUid = localStorage.getItem("uid")
+         const currentuid = (auth.currentUser?.email || savedUid) + name
+     const currentReceiver =  name + (auth.currentUser?.email || savedUid) 
+     console.log(currentuid)
+     console.log(currentReceiver)
+     // Перевіряємо, чи дані існують перед створенням collection
+     if (!currentuid || !currentReceiver) return;
+     
+              const messageCollection = collection(db, currentuid)
+            const messageReceiver = collection(db, currentReceiver)
+            const usersCollection = collection(db, "users")
+     const intoDatabase = async() =>{
         try{
          //   console.log(localStorage.getItem("uid"))
         const messages = await getDocs(messageCollection)
@@ -205,36 +234,40 @@ await deleteDoc(doc(contactCollection, id))
             console.error(err)
         }
     }
-   // Decription of messages -----------------------------------------------------------
-useEffect(()=>{
-    setName("notes")
-    setNickname("notes")
-}, [])
-useEffect(() => {
-  // 1. Перевіряємо, чи є дані для створення шляху
-  if (!auth.currentUser?.email || !name) return;
 
-  const currentuid1 = auth.currentUser.email + name;
+  if ((!auth.currentUser?.email && !savedUid) || !name) return;
+
+  const currentuid1 = (auth.currentUser?.email || savedUid) + name;
   const messageCollection1 = collection(db, currentuid1);
-const currentReceiver1 =  name + auth.currentUser?.email
+const currentReceiver1 =  name + (auth.currentUser?.email || savedUid)
  const messageReceiver1 = collection(db, currentReceiver1)
-  // 2. Підписуємось
+ const contactCollection1 = collection(db, `contacts ${(auth.currentUser?.email || savedUid)}`) 
   const unsubscribe = onSnapshot(messageCollection1, (snapshot) => {
-    // snapshot вже містить дані, але ви викликаєте зовнішню функцію - це теж ок
+
     intoDatabase(); 
     getContact();     
   });
 const unsubscribe2 = onSnapshot(messageReceiver1, (snapshot) => {
-    // snapshot вже містить дані, але ви викликаєте зовнішню функцію - це теж ок
+   
     intoDatabase(); 
     getContact();     
   });
-
-  // 3. Відписуємось при зміні name або розмонтуванні
-  return () => unsubscribe2();
-  // 3. Відписуємось при зміні name або розмонтуванні
-  return () => unsubscribe();
-}, [name, auth.currentUser?.email]); // <--- ВАЖЛИВО: додаємо залежності
+  const unsubscribe3 = onSnapshot(contactCollection1, (snapshot)=>{
+    intoDatabase(); 
+    getContact();     
+  })
+return () => {
+    unsubscribe();
+    unsubscribe2();
+    unsubscribe3()
+};
+}, [name, auth.currentUser?.email, uidState]); 
+useEffect(()=>{
+    const savedUid = localStorage.getItem("uid")
+    if(!savedUid) return
+    setUidState(savedUid)
+},
+[])
 return(
     <>
     <section className="flex justify-center items-start">
@@ -278,8 +311,7 @@ return(
                 if(window.innerWidth < 1280){
                 contacts.style.display = 'none'
                 }
-                console.log(currentuid)
-                console.log(currentReceiver)
+              
                 console.log(pathname)
                 }}>
              <div className="w-full h-auto flex justify-center items-center gap-4">
